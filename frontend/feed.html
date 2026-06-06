@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>UniHelp</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>UniHelp</h1>
+
+    <h2 id="boasVindas"></h2>
+
+    <button id="logoutBtn">
+        Sair
+    </button>
+
+    <hr>
+
+    <div class="card">
+
+        <h3>Nova Pergunta</h3>
+
+        <input
+                type="text"
+                id="titulo"
+                placeholder="Título da pergunta"
+        >
+
+        <textarea
+                id="descricao"
+                placeholder="Descreva sua dúvida"
+        ></textarea>
+
+        <button id="publicarBtn">
+            Publicar
+        </button>
+
+    </div>
+
+    <div id="listaPerguntas"></div>
+
+</div>
+
+<script src="js/feed.js"></script>
+
+</body>
+</html>
