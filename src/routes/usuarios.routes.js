@@ -8,7 +8,8 @@ const {
     buscarUsuarioPorEmail,
     criarUsuario,
     atualizarUsuario,
-    deletarUsuario
+    deletarUsuario,
+    autenticarUsuario
 } = require('../controllers/usuarios.controller');
 
 router.get('/', listarUsuarios);
@@ -22,5 +23,7 @@ router.put('/:id', atualizarUsuario);
 router.delete('/:id', deletarUsuario);
 
 router.get('/email/:email', buscarUsuarioPorEmail);
+
+router.post('/login', autenticarUsuario);
 
 module.exports = router;

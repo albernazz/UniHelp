@@ -11,26 +11,21 @@ form.addEventListener('submit', async (e) => {
         document.getElementById('senha').value;
 
     try {
-
-        const response = await fetch(
-            `http://localhost:3000/usuarios/email/${email}`
-        );
+        const response = await fetch('http://localhost:3000/usuarios/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, senha })
+        });
 
         if (!response.ok) {
-
-            alert('Usuário não encontrado');
-
+            const dataErro = await response.json();
+            alert(dataErro.erro || 'Erro na autenticação');
             return;
         }
 
         const usuario = await response.json();
-
-        if (usuario.senha !== senha) {
-
-            alert('Senha incorreta');
-
-            return;
-        }
 
         localStorage.setItem(
             'usuario',
@@ -40,10 +35,7 @@ form.addEventListener('submit', async (e) => {
         window.location.href = 'feed.html';
 
     } catch (error) {
-
         console.error(error);
-
         alert('Erro ao realizar login');
     }
-
 });
