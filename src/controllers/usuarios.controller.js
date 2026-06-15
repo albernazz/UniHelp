@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const listarUsuarios = async (req, res) => {
     try {
@@ -144,10 +145,19 @@ const autenticarUsuario = async (req, res) => {
             return res.status(401).json({ erro: 'Senha incorreta' });
         }
 
-        // 3. Remove a senha antes de devolver para o frontend
-        delete usuario.senha;
-        res.json(usuario);
+        const token = jwt.sign(
+            { id: usuario.id, tipo: usuario.tipo },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
+        delete usuario.senha;
+        
+        res.json({
+            usuario: usuario,
+            token: token
+        });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ erro: error.message });

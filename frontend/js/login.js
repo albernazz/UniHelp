@@ -25,11 +25,16 @@ form.addEventListener('submit', async (e) => {
             return;
         }
 
-        const usuario = await response.json();
+        const respostaLogin = await response.json();
 
         localStorage.setItem(
             'usuario',
-            JSON.stringify(usuario)
+            JSON.stringify(respostaLogin.usuario)
+        );
+        
+        localStorage.setItem(
+            'token',
+            respostaLogin.token
         );
 
         window.location.href = 'feed.html';

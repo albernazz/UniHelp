@@ -75,53 +75,50 @@ const criarResposta = async (req, res) => {
     }
 };
 
-// PUT /respostas/:id
 const atualizarResposta = async (req, res) => {
     try {
-
         const { id } = req.params;
         const { conteudo } = req.body;
+        const usuarioId = req.usuario.id;
 
         const result = await pool.query(
             `
             UPDATE respostas
             SET conteudo = $1
-            WHERE id = $2
+            WHERE id = $2 AND usuario_id = $3
             RETURNING *
             `,
-            [conteudo, id]
+            [conteudo, id, usuarioId]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({
-                erro: 'Resposta não encontrada'
+            return res.status(403).json({
+                erro: 'Não tem permissão para editar esta resposta ou ela não existe'
             });
         }
 
         res.json(result.rows[0]);
 
     } catch (error) {
-
         res.status(500).json({
             erro: error.message
         });
     }
 };
 
-// DELETE /respostas/:id
 const deletarResposta = async (req, res) => {
     try {
-
         const { id } = req.params;
+        const usuarioId = req.usuario.id;
 
         const result = await pool.query(
-            'DELETE FROM respostas WHERE id = $1 RETURNING *',
-            [id]
+            'DELETE FROM respostas WHERE id = $1 AND usuario_id = $2 RETURNING *',
+            [id, usuarioId]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({
-                erro: 'Resposta não encontrada'
+            return res.status(403).json({
+                erro: 'Não tem permissão para apagar esta resposta ou ela não existe'
             });
         }
 
@@ -130,7 +127,6 @@ const deletarResposta = async (req, res) => {
         });
 
     } catch (error) {
-
         res.status(500).json({
             erro: error.message
         });

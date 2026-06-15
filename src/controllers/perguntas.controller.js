@@ -98,66 +98,56 @@ const criarPergunta = async (req, res) => {
     }
 };
 
-// PUT /perguntas/:id
 const atualizarPergunta = async (req, res) => {
     try {
-
         const { id } = req.params;
-
-        const {
-            titulo,
-            descricao
-        } = req.body;
+        const { titulo, descricao } = req.body;
+        const usuarioId = req.usuario.id;
 
         const result = await pool.query(
             `
             UPDATE perguntas
             SET titulo = $1,
                 descricao = $2
-            WHERE id = $3
+            WHERE id = $3 AND usuario_id = $4
             RETURNING *
             `,
-            [titulo, descricao, id]
+            [titulo, descricao, id, usuarioId]
         );
 
         if (result.rows.length === 0) {
-
-            return res.status(404).json({
-                erro: 'Pergunta não encontrada'
+            return res.status(403).json({
+                erro: 'Não tem permissão para editar esta pergunta ou ela não existe'
             });
         }
 
         res.json(result.rows[0]);
 
     } catch (error) {
-
         console.error(error);
-
         res.status(500).json({
             erro: error.message
         });
     }
 };
 
-// DELETE /perguntas/:id
 const deletarPergunta = async (req, res) => {
     try {
-
         const { id } = req.params;
+        const usuarioId = req.usuario.id;
 
         const result = await pool.query(
             `
             DELETE FROM perguntas
-            WHERE id = $1
+            WHERE id = $1 AND usuario_id = $2
             RETURNING *
             `,
-            [id]
+            [id, usuarioId]
         );
 
         if (result.rows.length === 0) {
-
-            return res.status(404).json({
-                erro: 'Pergunta não encontrada'
+            return res.status(403).json({
+                erro: 'Não tem permissão para apagar esta pergunta ou ela não existe'
             });
         }
 
@@ -166,9 +156,7 @@ const deletarPergunta = async (req, res) => {
         });
 
     } catch (error) {
-
         console.error(error);
-
         res.status(500).json({
             erro: error.message
         });

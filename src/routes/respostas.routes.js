@@ -1,6 +1,7 @@
 const express = require('express');
 
 const router = express.Router();
+const verificarToken = require('../middlewares/auth.middleware');
 
 const {
     listarRespostas,
@@ -14,10 +15,10 @@ router.get('/', listarRespostas);
 
 router.get('/:id', buscarRespostaPorId);
 
-router.post('/', criarResposta);
+router.post('/', verificarToken, criarResposta);
 
-router.put('/:id', atualizarResposta);
+router.put('/:id', verificarToken, atualizarResposta);
 
-router.delete('/:id', deletarResposta);
+router.delete('/:id', verificarToken, deletarResposta);
 
 module.exports = router;

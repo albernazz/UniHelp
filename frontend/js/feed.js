@@ -81,42 +81,28 @@ document
     .addEventListener('click', publicarPergunta);
 
 async function publicarPergunta() {
-
-    const usuario =
-        JSON.parse(
-            localStorage.getItem('usuario')
-        );
-
-    const titulo =
-        document.getElementById('titulo').value;
-
-    const descricao =
-        document.getElementById('descricao').value;
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const token = localStorage.getItem('token');
+    
+    const titulo = document.getElementById('titulo').value;
+    const descricao = document.getElementById('descricao').value;
 
     try {
-
-        const response = await fetch(
-            'http://localhost:3000/perguntas',
-            {
-                method: 'POST',
-
-                headers: {
-                    'Content-Type':
-                        'application/json'
-                },
-
-                body: JSON.stringify({
-                    titulo,
-                    descricao,
-                    usuario_id: usuario.id
-                })
-            }
-        );
+        const response = await fetch('http://localhost:3000/perguntas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                titulo,
+                descricao,
+                usuario_id: usuario.id
+            })
+        });
 
         if (!response.ok) {
-
             alert('Erro ao publicar');
-
             return;
         }
 
@@ -126,7 +112,6 @@ async function publicarPergunta() {
         carregarPerguntas();
 
     } catch (error) {
-
         console.error(error);
     }
 }
