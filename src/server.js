@@ -15,6 +15,7 @@ require('dotenv').config({ path: envPath });
 const usuariosRoutes = require('./routes/usuarios.routes');
 const perguntasRoutes = require('./routes/perguntas.routes');
 const respostasRoutes = require('./routes/respostas.routes');
+const errorHandler = require('./middlewares/error.middleware');
 const cors = require('cors');
 
 const app = express();
@@ -29,8 +30,10 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/respostas', respostasRoutes);
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/login.html'));
+    res.redirect('/feed.html');
 });
+
+app.use(errorHandler);
 
 app.listen(3000, () => {
     console.log('Servidor rodando na porta 3000');

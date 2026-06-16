@@ -1,16 +1,26 @@
 const usuario = JSON.parse(localStorage.getItem('usuario'));
+const token = localStorage.getItem('token');
 
-if (!usuario) {
-    window.location.href = 'login.html';
+const boasVindas = document.getElementById('boasVindas');
+const authBtn = document.getElementById('authBtn');
+
+if (usuario) {
+    boasVindas.textContent = `Olá, ${usuario.nome}!`;
+    authBtn.textContent = 'Sair';
+
+    authBtn.addEventListener('click', () => {
+        localStorage.removeItem('usuario');
+        localStorage.removeItem('token');
+        window.location.reload();
+    });
+} else {
+    boasVindas.textContent = 'Bem-vindo ao UniHelp!';
+    authBtn.textContent = 'Entrar';
+
+    authBtn.addEventListener('click', () => {
+        window.location.href = 'login.html';
+    });
 }
-
-document.getElementById('boasVindas').textContent = `Olá, ${usuario.nome}!`;
-
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('usuario');
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
-});
 
 let paginaAtual = 1;
 const limitePorPagina = 5;
@@ -72,12 +82,17 @@ function abrirPergunta(id) {
 
 carregarPerguntas(paginaAtual);
 
-document.getElementById('publicarBtn').addEventListener('click', publicarPergunta);
+const publicarBtn = document.getElementById('publicarBtn');
+if (publicarBtn) {
+    publicarBtn.addEventListener('click', publicarPergunta);
+}
 
 async function publicarPergunta() {
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
-    const token = localStorage.getItem('token');
-    
+    if (!usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     const titulo = document.getElementById('titulo').value;
     const descricao = document.getElementById('descricao').value;
 

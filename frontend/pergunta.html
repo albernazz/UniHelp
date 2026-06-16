@@ -3,50 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>UniHelp</title>
-
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
 
-    <button onclick="window.location.href='feed.html'">
-        ← Voltar
-    </button>
+    <button onclick="window.location.href='feed.html'">← Voltar</button>
 
     <div class="card">
-
         <h2 id="tituloPergunta"></h2>
-
         <p id="descricaoPergunta"></p>
-
     </div>
 
     <h3>Respostas</h3>
 
     <div id="listaRespostas"></div>
 
-    <div class="card">
-
+    <div id="formResponder" class="card">
         <h3>Responder</h3>
-
-        <textarea
-                id="novaResposta"
-                rows="5"
-                placeholder="Digite sua resposta..."
-        ></textarea>
-
+        <textarea id="novaResposta" rows="5" placeholder="Digite sua resposta..."></textarea>
         <br><br>
-
-        <button id="responderBtn">
-            Responder
-        </button>
-
+        <button id="responderBtn">Responder</button>
     </div>
 
 </div>
 
 <script src="js/api.js"></script>
 <script src="js/pergunta.js"></script>
+
 </body>
 </html>
