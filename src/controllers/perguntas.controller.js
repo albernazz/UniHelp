@@ -1,100 +1,77 @@
 const pool = require('../config/db');
 
-// GET /perguntas
 const listarPerguntas = async (req, res) => {
     try {
-
-        const result = await pool.query(`
-            SELECT
-                p.id,
-                p.titulo,
-                p.descricao,
-                p.criado_em,
-                u.nome AS autor
-
-            FROM perguntas p
-
-            INNER JOIN usuarios u
-                ON p.usuario_id = u.id
-
-            ORDER BY p.criado_em DESC
-        `);
-
-        res.json(result.rows);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            erro: error.message
-        });
-    }
-};
-
-// GET /perguntas/:id
-const buscarPerguntaPorId = async (req, res) => {
-    try {
-
-        const { id } = req.params;
+        const pagina = parseInt(req.query.pagina) || 1;
+        const limite = parseInt(req.query.limite) || 10;
+        const offset = (pagina - 1) * limite;
 
         const result = await pool.query(
             `
-            SELECT *
-            FROM perguntas
-            WHERE id = $1
+            SELECT p.id, p.titulo, p.descricao, p.criado_em, u.nome AS autor
+            FROM perguntas p
+            INNER JOIN usuarios u ON p.usuario_id = u.id
+            ORDER BY p.criado_em DESC
+            LIMIT $1 OFFSET $2
             `,
-            [id]
+            [limite, offset]
         );
 
-        if (result.rows.length === 0) {
+        const countResult = await pool.query('SELECT COUNT(*) FROM perguntas');
+        const totalItems = parseInt(countResult.rows[0].count);
+        const totalPaginas = Math.ceil(totalItems / limite);
 
-            return res.status(404).json({
-                erro: 'Pergunta não encontrada'
+        res.json({
+            dados: result.rows,
+            paginaAtual: pagina,
+            totalPaginas: totalPaginas
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ erro: error.message });
+    }
+};
+
+const buscarPerguntaPorId = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            'SELECT * FROM perguntas WHERE id = $1',
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ erro: 'Pergunta não encontrada' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ erro: error.message });
+    }
+};
+
+const criarPergunta = async (req, res) => {
+    try {
+        const { titulo, descricao } = req.body;
+        const usuario_id = req.usuario.id;
+
+        if (!titulo || !titulo.trim() || !descricao || !descricao.trim()) {
+            return res.status(400).json({
+                erro: 'O título e a descrição são obrigatórios e não podem estar vazios.'
             });
         }
 
-        res.json(result.rows[0]);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            erro: error.message
-        });
-    }
-};
-
-// POST /perguntas
-const criarPergunta = async (req, res) => {
-    try {
-
-        const {
-            titulo,
-            descricao,
-            usuario_id
-        } = req.body;
-
         const result = await pool.query(
             `
-            INSERT INTO perguntas
-            (titulo, descricao, usuario_id)
+            INSERT INTO perguntas (titulo, descricao, usuario_id)
             VALUES ($1, $2, $3)
             RETURNING *
             `,
             [titulo, descricao, usuario_id]
         );
-
         res.status(201).json(result.rows[0]);
-
     } catch (error) {
-
         console.error(error);
-
-        res.status(500).json({
-            erro: error.message
-        });
+        res.status(500).json({ erro: error.message });
     }
 };
 
@@ -104,11 +81,16 @@ const atualizarPergunta = async (req, res) => {
         const { titulo, descricao } = req.body;
         const usuarioId = req.usuario.id;
 
+        if (!titulo || !titulo.trim() || !descricao || !descricao.trim()) {
+            return res.status(400).json({
+                erro: 'O título e a descrição são obrigatórios e não podem estar vazios.'
+            });
+        }
+
         const result = await pool.query(
             `
             UPDATE perguntas
-            SET titulo = $1,
-                descricao = $2
+            SET titulo = $1, descricao = $2
             WHERE id = $3 AND usuario_id = $4
             RETURNING *
             `,
@@ -120,14 +102,10 @@ const atualizarPergunta = async (req, res) => {
                 erro: 'Não tem permissão para editar esta pergunta ou ela não existe'
             });
         }
-
         res.json(result.rows[0]);
-
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            erro: error.message
-        });
+        res.status(500).json({ erro: error.message });
     }
 };
 
@@ -150,62 +128,37 @@ const deletarPergunta = async (req, res) => {
                 erro: 'Não tem permissão para apagar esta pergunta ou ela não existe'
             });
         }
-
-        res.json({
-            mensagem: 'Pergunta removida com sucesso'
-        });
-
+        res.json({ mensagem: 'Pergunta removida com sucesso' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            erro: error.message
-        });
+        res.status(500).json({ erro: error.message });
     }
 };
 
-// GET /perguntas/:id/detalhes
 const buscarDetalhesPergunta = async (req, res) => {
-
     try {
-
         const { id } = req.params;
 
         const pergunta = await pool.query(
             `
-            SELECT
-                p.*,
-                u.nome AS autor
-
+            SELECT p.*, u.nome AS autor
             FROM perguntas p
-
-            INNER JOIN usuarios u
-                ON p.usuario_id = u.id
-
+            INNER JOIN usuarios u ON p.usuario_id = u.id
             WHERE p.id = $1
             `,
             [id]
         );
 
         if (pergunta.rows.length === 0) {
-
-            return res.status(404).json({
-                erro: 'Pergunta não encontrada'
-            });
+            return res.status(404).json({ erro: 'Pergunta não encontrada' });
         }
 
         const respostas = await pool.query(
             `
-            SELECT
-                r.*,
-                u.nome AS autor
-
+            SELECT r.*, u.nome AS autor
             FROM respostas r
-
-            INNER JOIN usuarios u
-                ON r.usuario_id = u.id
-
+            INNER JOIN usuarios u ON r.usuario_id = u.id
             WHERE r.pergunta_id = $1
-
             ORDER BY r.criado_em ASC
             `,
             [id]
@@ -215,14 +168,9 @@ const buscarDetalhesPergunta = async (req, res) => {
             pergunta: pergunta.rows[0],
             respostas: respostas.rows
         });
-
     } catch (error) {
-
         console.error(error);
-
-        res.status(500).json({
-            erro: error.message
-        });
+        res.status(500).json({ erro: error.message });
     }
 };
 

@@ -1,84 +1,78 @@
-const usuario =
-    JSON.parse(
-        localStorage.getItem('usuario')
-    );
+const usuario = JSON.parse(localStorage.getItem('usuario'));
 
 if (!usuario) {
-
     window.location.href = 'login.html';
 }
 
-document.getElementById('boasVindas')
-    .innerText =
-    `Olá, ${usuario.nome}!`;
+document.getElementById('boasVindas').textContent = `Olá, ${usuario.nome}!`;
 
-document
-    .getElementById('logoutBtn')
-    .addEventListener('click', () => {
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+});
 
-        localStorage.removeItem('usuario');
+let paginaAtual = 1;
+const limitePorPagina = 5;
 
-        window.location.href =
-            'login.html';
-    });
-
-async function carregarPerguntas() {
-
+async function carregarPerguntas(pagina = 1) {
     try {
-
-        const response = await fetch(
-            'http://localhost:3000/perguntas'
-        );
-
-        const perguntas =
-            await response.json();
-
-        const lista =
-            document.getElementById(
-                'listaPerguntas'
-            );
-
+        const response = await fetch(`${API_URL}/perguntas?pagina=${pagina}&limite=${limitePorPagina}`);
+        const respostaJson = await response.json();
+        
+        const lista = document.getElementById('listaPerguntas');
         lista.innerHTML = '';
 
-        perguntas.forEach(pergunta => {
+        respostaJson.dados.forEach(pergunta => {
+            const card = document.createElement('div');
+            card.className = 'card';
 
-            lista.innerHTML += `
-                <div class="card">
+            const titulo = document.createElement('h3');
+            titulo.textContent = pergunta.titulo;
 
-                    <h3>
-                        ${pergunta.titulo}
-                    </h3>
+            const descricao = document.createElement('p');
+            descricao.textContent = pergunta.descricao;
 
-                    <p>
-                        ${pergunta.descricao}
-                    </p>
+            const botao = document.createElement('button');
+            botao.textContent = 'Ver Discussão';
+            botao.addEventListener('click', () => abrirPergunta(pergunta.id));
 
-                    <button
-                        onclick="abrirPergunta(${pergunta.id})">
-                        Ver Discussão
-                    </button>
+            card.appendChild(titulo);
+            card.appendChild(descricao);
+            card.appendChild(botao);
 
-                </div>
-            `;
+            lista.appendChild(card);
         });
 
-    } catch (error) {
+        document.getElementById('infoPagina').textContent = `Página ${respostaJson.paginaAtual} de ${respostaJson.totalPaginas || 1}`;
+        
+        document.getElementById('btnAnterior').disabled = respostaJson.paginaAtual === 1;
+        document.getElementById('btnProxima').disabled = respostaJson.paginaAtual >= respostaJson.totalPaginas;
 
+        paginaAtual = respostaJson.paginaAtual;
+
+    } catch (error) {
         console.error(error);
     }
 }
 
-function abrirPergunta(id) {
+document.getElementById('btnAnterior').addEventListener('click', () => {
+    if (paginaAtual > 1) {
+        carregarPerguntas(paginaAtual - 1);
+    }
+});
 
-    window.location.href =
-        `pergunta.html?id=${id}`;
+document.getElementById('btnProxima').addEventListener('click', () => {
+    carregarPerguntas(paginaAtual + 1);
+});
+
+function abrirPergunta(id) {
+    window.location.href = `pergunta.html?id=${id}`;
 }
 
-carregarPerguntas();
+carregarPerguntas(paginaAtual);
 
-document
-    .getElementById('publicarBtn')
-    .addEventListener('click', publicarPergunta);
+document.getElementById('publicarBtn').addEventListener('click', publicarPergunta);
 
 async function publicarPergunta() {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
@@ -88,7 +82,7 @@ async function publicarPergunta() {
     const descricao = document.getElementById('descricao').value;
 
     try {
-        const response = await fetch('http://localhost:3000/perguntas', {
+        const response = await fetch(`${API_URL}/perguntas`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -109,7 +103,7 @@ async function publicarPergunta() {
         document.getElementById('titulo').value = '';
         document.getElementById('descricao').value = '';
 
-        carregarPerguntas();
+        carregarPerguntas(1);
 
     } catch (error) {
         console.error(error);
