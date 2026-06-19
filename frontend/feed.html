@@ -1,41 +1,56 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>UniHelp</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
+        <h1>UniHelp</h1>
+        <h2 id="boasVindas"></h2>
+        <button id="authBtn"></button>
+        <hr>
 
-    <h1>UniHelp</h1>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="inputBusca" placeholder="Buscar perguntas..." style="flex: 1; margin:0;">
+            <select id="filtroCategoria" style="margin:0;">
+                <option value="">Todas Categorias</option>
+                <option value="Programação">Programação</option>
+                <option value="Cálculo">Cálculo</option>
+                <option value="Física">Física</option>
+                <option value="Geral">Geral</option>
+            </select>
+            <button id="btnBuscar" style="margin:0;">🔍 Buscar</button>
+        </div>
 
-    <h2 id="boasVindas"></h2>
+        <div class="card" id="formNovaPergunta">
+            <h3>Nova Pergunta</h3>
+            <input type="text" id="titulo" placeholder="Título da pergunta">
+            <select id="categoria" style="width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box;">
+                <option value="Geral">Categoria: Geral</option>
+                <option value="Programação">Categoria: Programação</option>
+                <option value="Cálculo">Categoria: Cálculo</option>
+                <option value="Física">Categoria: Física</option>
+            </select>
+            <textarea id="descricao" placeholder="Descreva sua dúvida"></textarea>
+            <button id="publicarBtn">Publicar</button>
+        </div>
 
-    <button id="authBtn"></button>
+        <div id="listaPerguntas"></div>
 
-    <hr>
-
-    <div class="card" id="formNovaPergunta">
-        <h3>Nova Pergunta</h3>
-        <input type="text" id="titulo" placeholder="Título da pergunta">
-        <textarea id="descricao" placeholder="Descreva sua dúvida"></textarea>
-        <button id="publicarBtn">Publicar</button>
+        <div id="paginacao" style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+            <button id="btnAnterior">Anterior</button>
+            <span id="infoPagina" style="margin: 0 15px; font-weight: bold;">Página 1</span>
+            <button id="btnProxima">Próxima</button>
+        </div>
     </div>
 
-    <div id="listaPerguntas"></div>
-
-    <div id="paginacao" style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-        <button id="btnAnterior">Anterior</button>
-        <span id="infoPagina" style="margin: 0 15px; font-weight: bold;">Página 1</span>
-        <button id="btnProxima">Próxima</button>
-    </div>
-
-</div>
-
-<script src="js/api.js"></script>
-<script src="js/feed.js"></script>
-
+    <script src="js/api.js"></script>
+    <script src="js/feed.js"></script>
 </body>
+
 </html>

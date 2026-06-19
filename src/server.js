@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 const envPath = path.join(__dirname, '../.env');
 
@@ -23,6 +24,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- Rate Limiting (Segurança) ---
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 3, // Limita a 3 requisições
+    message: { erro: 'Muitas requisições deste IP, por favor, tente novamente mais tarde.' }
+});
+
+// Aplica o Rate Limit em todas as rotas da API
+app.use('/perguntas', limiter);
+app.use('/usuarios', limiter);
+app.use('/respostas', limiter);
+// ---------------------------------
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.use('/perguntas', perguntasRoutes);
@@ -37,5 +51,4 @@ app.use(errorHandler);
 
 app.listen(3000, () => {
     console.log('Servidor rodando na porta 3000');
-    console.log('Usuario do banco:', process.env.DB_USER);
 });

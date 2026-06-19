@@ -118,7 +118,7 @@ const autenticarUsuario = async (req, res) => {
     );
 
     delete usuario.senha;
-    
+
     res.json({
         usuario: usuario,
         token: token

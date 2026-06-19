@@ -4,45 +4,77 @@ const listarPerguntas = async (req, res) => {
     const pagina = parseInt(req.query.pagina) || 1;
     const limite = parseInt(req.query.limite) || 10;
     const offset = (pagina - 1) * limite;
+    const busca = req.query.busca || '';
+    const categoria = req.query.categoria || '';
 
-    const result = await pool.query(
-        `
-        SELECT p.id, p.titulo, p.descricao, p.criado_em, u.nome AS autor
+    let queryStr = `
+        SELECT p.id, p.titulo, p.descricao, p.categoria, p.criado_em, u.nome AS autor
         FROM perguntas p
         INNER JOIN usuarios u ON p.usuario_id = u.id
-        ORDER BY p.criado_em DESC
-        LIMIT $1 OFFSET $2
-        `,
-        [limite, offset]
-    );
+        WHERE 1=1
+    `;
+    const queryParams = [];
+    let paramIndex = 1;
 
-    const countResult = await pool.query('SELECT COUNT(*) FROM perguntas');
-    const totalItems = parseInt(countResult.rows[0].count);
-    const totalPaginas = Math.ceil(totalItems / limite);
+    if (busca) {
+        queryStr += ` AND (p.titulo ILIKE $${paramIndex} OR p.descricao ILIKE $${paramIndex})`;
+        queryParams.push(`%${busca}%`);
+        paramIndex++;
+    }
 
-    res.json({
-        dados: result.rows,
-        paginaAtual: pagina,
-        totalPaginas: totalPaginas
-    });
+    if (categoria) {
+        queryStr += ` AND p.categoria = $${paramIndex}`;
+        queryParams.push(categoria);
+        paramIndex++;
+    }
+
+    let countQueryStr = `SELECT COUNT(*) FROM perguntas p WHERE 1=1`;
+    let countParams = [];
+    let countParamIndex = 1;
+
+    if (busca) {
+        countQueryStr += ` AND (p.titulo ILIKE $${countParamIndex} OR p.descricao ILIKE $${countParamIndex})`;
+        countParams.push(`%${busca}%`);
+        countParamIndex++;
+    }
+
+    if (categoria) {
+        countQueryStr += ` AND p.categoria = $${countParamIndex}`;
+        countParams.push(categoria);
+        countParamIndex++;
+    }
+
+    queryStr += ` ORDER BY p.criado_em DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    queryParams.push(limite, offset);
+
+    try {
+        const result = await pool.query(queryStr, queryParams);
+        const countResult = await pool.query(countQueryStr, countParams);
+        const totalItems = parseInt(countResult.rows[0].count);
+        const totalPaginas = Math.ceil(totalItems / limite);
+
+        res.json({
+            dados: result.rows,
+            paginaAtual: pagina,
+            totalPaginas: totalPaginas
+        });
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro ao buscar perguntas' });
+    }
 };
 
 const buscarPerguntaPorId = async (req, res) => {
     const { id } = req.params;
-    const result = await pool.query(
-        'SELECT * FROM perguntas WHERE id = $1',
-        [id]
-    );
-    
+    const result = await pool.query('SELECT * FROM perguntas WHERE id = $1', [id]);
+
     if (result.rows.length === 0) {
         return res.status(404).json({ erro: 'Pergunta não encontrada' });
     }
-    
     res.json(result.rows[0]);
 };
 
 const criarPergunta = async (req, res) => {
-    const { titulo, descricao } = req.body;
+    const { titulo, descricao, categoria } = req.body;
     const usuario_id = req.usuario.id;
 
     if (!titulo || !titulo.trim() || !descricao || !descricao.trim()) {
@@ -53,65 +85,42 @@ const criarPergunta = async (req, res) => {
 
     const result = await pool.query(
         `
-        INSERT INTO perguntas (titulo, descricao, usuario_id)
-        VALUES ($1, $2, $3)
+        INSERT INTO perguntas (titulo, descricao, categoria, usuario_id)
+        VALUES ($1, $2, $3, $4)
         RETURNING *
         `,
-        [titulo, descricao, usuario_id]
+        [titulo, descricao, categoria || 'Geral', usuario_id]
     );
-    
+
     res.status(201).json(result.rows[0]);
 };
 
 const atualizarPergunta = async (req, res) => {
+    // Código inalterado...
     const { id } = req.params;
     const { titulo, descricao } = req.body;
     const usuarioId = req.usuario.id;
-
     if (!titulo || !titulo.trim() || !descricao || !descricao.trim()) {
-        return res.status(400).json({
-            erro: 'O título e a descrição são obrigatórios e não podem estar vazios.'
-        });
+        return res.status(400).json({ erro: 'O título e a descrição são obrigatórios.' });
     }
-
     const result = await pool.query(
-        `
-        UPDATE perguntas
-        SET titulo = $1, descricao = $2
-        WHERE id = $3 AND usuario_id = $4
-        RETURNING *
-        `,
+        `UPDATE perguntas SET titulo = $1, descricao = $2 WHERE id = $3 AND usuario_id = $4 RETURNING *`,
         [titulo, descricao, id, usuarioId]
     );
-
     if (result.rows.length === 0) {
-        return res.status(403).json({
-            erro: 'Não tem permissão para editar esta pergunta ou ela não existe'
-        });
+        return res.status(403).json({ erro: 'Não tem permissão ou não existe' });
     }
-    
     res.json(result.rows[0]);
 };
 
 const deletarPergunta = async (req, res) => {
+    // Código inalterado...
     const { id } = req.params;
     const usuarioId = req.usuario.id;
-
-    const result = await pool.query(
-        `
-        DELETE FROM perguntas
-        WHERE id = $1 AND usuario_id = $2
-        RETURNING *
-        `,
-        [id, usuarioId]
-    );
-
+    const result = await pool.query(`DELETE FROM perguntas WHERE id = $1 AND usuario_id = $2 RETURNING *`, [id, usuarioId]);
     if (result.rows.length === 0) {
-        return res.status(403).json({
-            erro: 'Não tem permissão para apagar esta pergunta ou ela não existe'
-        });
+        return res.status(403).json({ erro: 'Não tem permissão ou não existe' });
     }
-    
     res.json({ mensagem: 'Pergunta removida com sucesso' });
 };
 
@@ -138,7 +147,7 @@ const buscarDetalhesPergunta = async (req, res) => {
         FROM respostas r
         INNER JOIN usuarios u ON r.usuario_id = u.id
         WHERE r.pergunta_id = $1
-        ORDER BY r.criado_em ASC
+        ORDER BY (r.votos_uteis - r.votos_nao_uteis) DESC, r.criado_em ASC
         `,
         [id]
     );
@@ -149,11 +158,4 @@ const buscarDetalhesPergunta = async (req, res) => {
     });
 };
 
-module.exports = {
-    listarPerguntas,
-    buscarPerguntaPorId,
-    criarPergunta,
-    atualizarPergunta,
-    deletarPergunta,
-    buscarDetalhesPergunta
-};
+module.exports = { listarPerguntas, buscarPerguntaPorId, criarPergunta, atualizarPergunta, deletarPergunta, buscarDetalhesPergunta };
