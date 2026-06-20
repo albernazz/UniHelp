@@ -1,39 +1,319 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>UniHelp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniHelp — Pergunta</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-    <div class="container">
+<div class="toast" id="uh-toast"></div>
 
-        <button onclick="window.location.href='feed.html'">← Voltar</button>
+<!-- HEADER -->
+<header class="so-header" id="soHeader"></header>
 
-        <div class="card">
-            <h2 id="tituloPergunta"></h2>
-            <p id="descricaoPergunta"></p>
+<!-- BODY -->
+<div class="so-body">
+
+    <!-- LEFT SIDEBAR -->
+    <nav class="so-sidebar-left">
+        <div class="sidebar-section">
+            <ul class="sidebar-nav">
+                <li><a href="feed.html">Início</a></li>
+                <li class="active"><a href="feed.html">Perguntas</a></li>
+            </ul>
         </div>
-
-        <h3>Respostas</h3>
-
-        <div id="listaRespostas"></div>
-
-        <div id="formResponder" class="card">
-            <h3>Responder</h3>
-            <textarea id="novaResposta" rows="5" placeholder="Digite sua resposta..."></textarea>
-            <br><br>
-            <button id="responderBtn">Responder</button>
+        <div class="sidebar-section">
+            <div class="sidebar-title">Categorias</div>
+            <ul class="sidebar-nav">
+                <li class="sub"><a href="feed.html?cat=Programação">Programação</a></li>
+                <li class="sub"><a href="feed.html?cat=Cálculo">Cálculo</a></li>
+                <li class="sub"><a href="feed.html?cat=Física">Física</a></li>
+                <li class="sub"><a href="feed.html?cat=Geral">Geral</a></li>
+                <li class="sub"><a href="feed.html">Todas</a></li>
+            </ul>
         </div>
+    </nav>
 
-    </div>
+    <!-- MAIN -->
+    <main class="so-main" id="mainContent">
+        <a class="back-link" href="feed.html">← Voltar para Perguntas</a>
+        <div id="pageContent">
+            <!-- conteúdo renderizado por JS -->
+        </div>
+    </main>
 
-    <script src="js/api.js"></script>
-    <script src="js/pergunta.js"></script>
+    <!-- RIGHT SIDEBAR -->
+    <aside class="so-sidebar-right">
+        <div class="widget-box">
+            <div class="widget-header yellow">Dicas para uma boa resposta</div>
+            <div class="widget-body">
+                <p>• Responda à pergunta diretamente.</p>
+                <p>• Use exemplos práticos quando possível.</p>
+                <p>• Cite fontes ou referências relevantes.</p>
+                <p>• Vote nas respostas úteis para ajudar outros estudantes.</p>
+            </div>
+        </div>
+        <div class="widget-box" id="widgetRelated">
+            <div class="widget-header blue">Perguntas relacionadas</div>
+            <div class="widget-body" id="relatedList">
+                <p style="color:#6a737c;font-size:12px">Carregando...</p>
+            </div>
+        </div>
+    </aside>
 
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+    const params     = new URLSearchParams(window.location.search);
+    const perguntaId = params.get('id');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderHeader();
+        if (!perguntaId) {
+            document.getElementById('pageContent').innerHTML =
+                '<div class="empty-state"><div class="empty-icon">❓</div><p>Pergunta não encontrada.</p></div>';
+            return;
+        }
+        carregarPergunta();
+        carregarRelacionadas();
+    });
+
+    // ── Carregar detalhe ─────────────────────────────
+    async function carregarPergunta() {
+        const pc = document.getElementById('pageContent');
+        pc.innerHTML = `
+            <div class="skeleton" style="height:30px;width:70%;margin-bottom:16px"></div>
+            <div class="skeleton" style="height:12px;width:50%;margin-bottom:24px"></div>
+            <div class="skeleton" style="height:80px;width:100%;margin-bottom:16px"></div>`;
+
+        try {
+            const res = await fetch(`${API_URL}/perguntas/${perguntaId}/detalhes`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            renderDetalhe(data.pergunta, data.respostas || []);
+            document.title = `UniHelp — ${data.pergunta.titulo}`;
+        } catch (e) {
+            pc.innerHTML = `
+                <div class="offline-banner">
+                    <strong>⚠️ Não foi possível carregar esta pergunta.</strong>
+                    Verifique se o servidor está rodando: <code>npm run dev</code>
+                </div>`;
+        }
+    }
+
+    // ── Renderizar detalhe ───────────────────────────
+    function renderDetalhe(pergunta, respostas) {
+        const usuario = getUsuario();
+        const tc      = tagClass(pergunta.categoria);
+
+        const answersHtml = respostas.length === 0
+            ? `<div class="empty-state">
+                   <div class="empty-icon">💬</div>
+                   <p>Nenhuma resposta ainda.</p>
+                   <small>Seja o primeiro a ajudar!</small>
+               </div>`
+            : respostas.map((r, idx) => {
+                const saldo = (r.votos_uteis || 0) - (r.votos_nao_uteis || 0);
+                const isFirst = idx === 0 && respostas.length > 0;
+                return `
+                <div class="answer-card ${isFirst ? 'accepted' : ''}" id="ans-${r.id}">
+                    <div class="vote-col">
+                        <button class="vote-btn" onclick="votar(${r.id},'util')" title="Útil" id="btn-up-${r.id}">▲</button>
+                        <div class="vote-count" id="voto-${r.id}">${saldo}</div>
+                        <button class="vote-btn" onclick="votar(${r.id},'nao_util')" title="Não útil" id="btn-dn-${r.id}">▼</button>
+                        ${isFirst ? '<div class="accepted-badge" title="Melhor resposta">✓</div>' : ''}
+                    </div>
+                    <div class="answer-body">
+                        <div class="answer-content">${escHtml(r.conteudo || '')}</div>
+                        <div class="answer-actions">
+                            <button class="btn-action">Compartilhar</button>
+                            ${usuario && usuario.id === r.usuario_id
+                                ? `<button class="btn-action" onclick="editarResposta(${r.id}, this)">Editar</button>
+                                   <button class="btn-action" style="color:#c02b2b" onclick="deletarResposta(${r.id}, ${pergunta.id})">Excluir</button>`
+                                : ''}
+                        </div>
+                        <div class="answer-author-row">
+                            <div style="font-size:12px;color:#6a737c">
+                                👍 ${r.votos_uteis || 0} úteis &nbsp;|&nbsp; 👎 ${r.votos_nao_uteis || 0} não úteis
+                            </div>
+                            <div class="author-card">
+                                <div class="author-action-label">respondida ${timeAgo(r.criado_em)}</div>
+                                <div class="author-name">${escHtml(r.autor || 'Anônimo')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+        const postAnswerHtml = usuario
+            ? `<div class="post-answer-wrap">
+                   <h3 class="post-answer-title">Sua Resposta</h3>
+                   <div class="form-group">
+                       <textarea id="novaResposta" class="form-input" rows="8"
+                           placeholder="Escreva sua resposta aqui. Seja claro e detalhado..."></textarea>
+                   </div>
+                   <button class="btn-primary" onclick="enviarResposta(${pergunta.id})">Publicar Resposta</button>
+               </div>`
+            : `<div class="post-answer-wrap">
+                   <div class="answer-alert">
+                       Para responder você precisa estar
+                       <a href="login.html">logado</a>.
+                       Não tem conta? <a href="registro.html">Registre-se</a>.
+                   </div>
+               </div>`;
+
+        document.getElementById('pageContent').innerHTML = `
+            <!-- HEADER DA PERGUNTA -->
+            <div class="q-detail-header">
+                <h1 class="q-detail-title">${escHtml(pergunta.titulo)}</h1>
+                <div class="q-detail-meta">
+                    <span>Feita ${timeAgo(pergunta.criado_em)}</span>
+                    <span>por <strong>${escHtml(pergunta.autor || 'Anônimo')}</strong></span>
+                    <span><span class="tag ${tc}">${escHtml(pergunta.categoria || 'Geral')}</span></span>
+                </div>
+            </div>
+
+            <!-- CORPO DA PERGUNTA -->
+            <div class="question-detail-body">
+                <div class="vote-col">
+                    <button class="vote-btn" title="Pergunta útil">▲</button>
+                    <div class="vote-count">${pergunta.votos || 0}</div>
+                    <button class="vote-btn" title="Pergunta não útil">▼</button>
+                    <div title="Favoritar" style="margin-top:8px;color:#6a737c;cursor:pointer;font-size:20px">🔖</div>
+                </div>
+                <div class="q-body-content">
+                    <div class="q-body-text">${escHtml(pergunta.descricao || '')}</div>
+                    <div class="q-tags" style="margin-top:12px">
+                        <span class="tag ${tc}">${escHtml(pergunta.categoria || 'Geral')}</span>
+                    </div>
+                    <div class="q-footer-row">
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-action" style="padding:5px 8px;border-radius:3px;border:1px solid #e3e6e8;font-size:12px;color:#6a737c;background:#fff">Compartilhar</button>
+                            ${usuario && usuario.id === pergunta.usuario_id
+                                ? `<button class="btn-action" style="padding:5px 8px;border-radius:3px;border:1px solid #e3e6e8;font-size:12px;color:#c02b2b;background:#fff"
+                                    onclick="deletarPergunta(${pergunta.id})">Excluir</button>`
+                                : ''}
+                        </div>
+                        <div class="author-card">
+                            <div class="author-action-label">feita ${timeAgo(pergunta.criado_em)}</div>
+                            <div class="author-name">${escHtml(pergunta.autor || 'Anônimo')}</div>
+                            <div class="author-meta">${escHtml(pergunta.tipo || 'aluno')}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESPOSTAS -->
+            <h2 class="answers-title">${respostas.length} Resposta${respostas.length !== 1 ? 's' : ''}</h2>
+            <div id="answersContainer">${answersHtml}</div>
+
+            <!-- POSTAR RESPOSTA -->
+            ${postAnswerHtml}`;
+    }
+
+    // ── Votar ────────────────────────────────────────
+    async function votar(respostaId, tipo) {
+        const usuario = getUsuario();
+        if (!usuario) {
+            showToast('Faça login para votar.', 'error');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/respostas/${respostaId}/votar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ tipo })
+            });
+            const data = await res.json();
+            if (!res.ok) { showToast(data.erro || 'Erro ao votar.', 'error'); return; }
+
+            if (data.resposta) {
+                const saldo = (data.resposta.votos_uteis || 0) - (data.resposta.votos_nao_uteis || 0);
+                const el = document.getElementById(`voto-${respostaId}`);
+                if (el) el.textContent = saldo;
+            }
+            showToast(data.mensagem || 'Voto registrado!', 'success');
+        } catch (e) {
+            showToast('Servidor offline.', 'error');
+        }
+    }
+
+    // ── Enviar resposta ──────────────────────────────
+    async function enviarResposta(perguntaId) {
+        const txt = document.getElementById('novaResposta');
+        if (!txt || !txt.value.trim()) { showToast('A resposta não pode estar vazia.', 'error'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/respostas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ conteudo: txt.value.trim(), pergunta_id: perguntaId })
+            });
+            const data = await res.json();
+            if (!res.ok) { showToast(data.erro || 'Erro ao publicar.', 'error'); return; }
+            showToast('Resposta publicada!', 'success');
+            carregarPergunta();
+        } catch (e) {
+            showToast('Servidor offline.', 'error');
+        }
+    }
+
+    // ── Deletar resposta ─────────────────────────────
+    async function deletarResposta(respostaId, perguntaId) {
+        if (!confirm('Tem certeza que deseja excluir esta resposta?')) return;
+        try {
+            const res = await fetch(`${API_URL}/respostas/${respostaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!res.ok) { const d = await res.json(); showToast(d.erro || 'Erro ao excluir.', 'error'); return; }
+            showToast('Resposta excluída.', 'success');
+            carregarPergunta();
+        } catch (e) { showToast('Servidor offline.', 'error'); }
+    }
+
+    // ── Deletar pergunta ─────────────────────────────
+    async function deletarPergunta(id) {
+        if (!confirm('Tem certeza que deseja excluir esta pergunta?')) return;
+        try {
+            const res = await fetch(`${API_URL}/perguntas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!res.ok) { const d = await res.json(); showToast(d.erro || 'Erro ao excluir.', 'error'); return; }
+            showToast('Pergunta excluída.', 'success');
+            setTimeout(() => window.location.href = 'feed.html', 1200);
+        } catch (e) { showToast('Servidor offline.', 'error'); }
+    }
+
+    // ── Perguntas relacionadas ───────────────────────
+    async function carregarRelacionadas() {
+        try {
+            const res = await fetch(`${API_URL}/perguntas?limite=5`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const perguntas = (data.dados || []).filter(p => String(p.id) !== String(perguntaId)).slice(0, 4);
+            const el = document.getElementById('relatedList');
+            if (perguntas.length === 0) { el.innerHTML = '<p style="font-size:12px;color:#6a737c">Nenhuma.</p>'; return; }
+            el.innerHTML = perguntas.map(p => `
+                <div style="padding:5px 0;border-bottom:1px solid #e3e6e8">
+                    <a href="pergunta.html?id=${p.id}" style="font-size:13px;line-height:1.4;display:block">${escHtml(p.titulo)}</a>
+                    <span class="tag ${tagClass(p.categoria)}" style="margin-top:4px;display:inline-block">${escHtml(p.categoria || 'Geral')}</span>
+                </div>`).join('');
+        } catch (e) {
+            document.getElementById('relatedList').innerHTML = '<p style="font-size:12px;color:#6a737c">Indisponível.</p>';
+        }
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
 </body>
-
 </html>

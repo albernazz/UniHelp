@@ -1,56 +1,430 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>UniHelp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniHelp — Perguntas</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-    <div class="container">
-        <h1>UniHelp</h1>
-        <h2 id="boasVindas"></h2>
-        <button id="authBtn"></button>
-        <hr>
+<!-- TOAST -->
+<div class="toast" id="uh-toast"></div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <input type="text" id="inputBusca" placeholder="Buscar perguntas..." style="flex: 1; margin:0;">
-            <select id="filtroCategoria" style="margin:0;">
-                <option value="">Todas Categorias</option>
+<!-- HEADER -->
+<header class="so-header" id="soHeader"></header>
+
+<!-- MODAL: FAZER PERGUNTA -->
+<div class="modal-overlay hidden" id="askModal" onclick="if(event.target===this)closeAskModal()">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeAskModal()" aria-label="Fechar">✕</button>
+        <h2 class="modal-title">Fazer uma Pergunta</h2>
+
+        <div class="form-group">
+            <label class="form-label" for="askTitulo">Título</label>
+            <p class="form-label-desc">Seja específico e direto. Descreva o problema em uma frase.</p>
+            <input type="text" id="askTitulo" class="form-input"
+                   placeholder="Ex: Como declarar um array de structs em C?" maxlength="200">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="askCategoria">Categoria</label>
+            <select id="askCategoria" class="form-select">
+                <option value="Geral">Geral</option>
+                <option value="Programação">Programação</option>
+                <option value="Cálculo">Cálculo</option>
+                <option value="Física">Física</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="askDescricao">Descrição</label>
+            <p class="form-label-desc">Detalhe o problema. Inclua o que já tentou fazer.</p>
+            <textarea id="askDescricao" class="form-input" rows="7"
+                      placeholder="Descreva sua dúvida com o máximo de detalhes possível..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="publicarPergunta()">Publicar Pergunta</button>
+            <button class="btn-secondary" onclick="closeAskModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- BODY -->
+<div class="so-body">
+
+    <!-- LEFT SIDEBAR -->
+    <nav class="so-sidebar-left">
+        <div class="sidebar-section">
+            <ul class="sidebar-nav">
+                <li class="active" id="navInicio"><a href="feed.html">Início</a></li>
+                <li id="navPerguntas"><a href="feed.html">Perguntas</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">Categorias</div>
+            <ul class="sidebar-nav">
+                <li class="sub"><button onclick="filtrarCategoria('Programação')">Programação</button></li>
+                <li class="sub"><button onclick="filtrarCategoria('Cálculo')">Cálculo</button></li>
+                <li class="sub"><button onclick="filtrarCategoria('Física')">Física</button></li>
+                <li class="sub"><button onclick="filtrarCategoria('Geral')">Geral</button></li>
+                <li class="sub"><button onclick="filtrarCategoria('')">Todas</button></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">Conta</div>
+            <ul class="sidebar-nav" id="sidebarAuth">
+                <li class="sub"><a href="login.html">Entrar</a></li>
+                <li class="sub"><a href="registro.html">Registrar</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="so-main">
+        <div class="feed-header">
+            <h1 class="feed-title">Todas as Perguntas</h1>
+            <button class="btn-ask" onclick="abrirModalPergunta()">Fazer uma Pergunta</button>
+        </div>
+
+        <!-- SEARCH ROW -->
+        <div class="main-search-row">
+            <input type="text" id="mainSearch" placeholder="Buscar por título ou descrição..."
+                   onkeydown="if(event.key==='Enter')buscarPerguntas()">
+            <select id="mainCat" onchange="buscarPerguntas()">
+                <option value="">Todas as categorias</option>
                 <option value="Programação">Programação</option>
                 <option value="Cálculo">Cálculo</option>
                 <option value="Física">Física</option>
                 <option value="Geral">Geral</option>
             </select>
-            <button id="btnBuscar" style="margin:0;">🔍 Buscar</button>
+            <button onclick="buscarPerguntas()">Buscar</button>
         </div>
 
-        <div class="card" id="formNovaPergunta">
-            <h3>Nova Pergunta</h3>
-            <input type="text" id="titulo" placeholder="Título da pergunta">
-            <select id="categoria" style="width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box;">
-                <option value="Geral">Categoria: Geral</option>
-                <option value="Programação">Categoria: Programação</option>
-                <option value="Cálculo">Categoria: Cálculo</option>
-                <option value="Física">Categoria: Física</option>
-            </select>
-            <textarea id="descricao" placeholder="Descreva sua dúvida"></textarea>
-            <button id="publicarBtn">Publicar</button>
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+            <span class="filter-count" id="filterCount">Carregando...</span>
+            <div class="filter-tabs">
+                <button class="filter-tab active" id="tabRecentes" onclick="setOrdem('recentes', this)">Recentes</button>
+                <button class="filter-tab" id="tabAntigos"  onclick="setOrdem('antigas',  this)">Mais Antigas</button>
+            </div>
         </div>
 
-        <div id="listaPerguntas"></div>
+        <!-- LISTA -->
+        <div class="question-list" id="questionList"></div>
 
-        <div id="paginacao" style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-            <button id="btnAnterior">Anterior</button>
-            <span id="infoPagina" style="margin: 0 15px; font-weight: bold;">Página 1</span>
-            <button id="btnProxima">Próxima</button>
+        <!-- PAGINAÇÃO -->
+        <div class="pagination" id="pagination"></div>
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="so-sidebar-right">
+        <div class="widget-box">
+            <div class="widget-header yellow">Sobre o UniHelp</div>
+            <div class="widget-body">
+                <p>Plataforma de perguntas e respostas para estudantes universitários da UCB.</p>
+                <div style="margin-top:12px">
+                    <div class="widget-stat-row"><span>📝 Perguntas</span><strong id="statQ">—</strong></div>
+                    <div class="widget-stat-row"><span>💬 Respostas</span><strong id="statR">—</strong></div>
+                    <div class="widget-stat-row"><span>👤 Usuários</span><strong id="statU">—</strong></div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/feed.js"></script>
+        <div class="widget-box">
+            <div class="widget-header blue">Categorias</div>
+            <div class="widget-body">
+                <div class="widget-tags">
+                    <span class="tag tag-prog" onclick="filtrarCategoria('Programação')">Programação</span>
+                    <span class="tag tag-calc" onclick="filtrarCategoria('Cálculo')">Cálculo</span>
+                    <span class="tag tag-fis"  onclick="filtrarCategoria('Física')">Física</span>
+                    <span class="tag tag-ger"  onclick="filtrarCategoria('Geral')">Geral</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-box" id="widgetUser" style="display:none">
+            <div class="widget-header gray">Meu Perfil</div>
+            <div class="widget-body" id="widgetUserBody"></div>
+        </div>
+    </aside>
+
+</div><!-- /.so-body -->
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+    // ── Estado ──────────────────────────────────────
+    let paginaAtual    = 1;
+    const LIMITE       = 10;
+    let ordemAtual     = 'recentes';
+    let buscaAtual     = '';
+    let catAtual       = '';
+    let totalPaginas   = 1;
+
+    // ── Boot ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        renderHeader();
+        initSidebarAuth();
+        initWidgetUser();
+
+        // lê parâmetros da URL (busca vinda do header)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('busca')) {
+            buscaAtual = params.get('busca');
+            document.getElementById('mainSearch').value = buscaAtual;
+        }
+        if (params.get('cat')) {
+            catAtual = params.get('cat');
+            document.getElementById('mainCat').value = catAtual;
+        }
+
+        carregarPerguntas();
+    });
+
+    // ── Sidebar auth links ───────────────────────────
+    function initSidebarAuth() {
+        const usuario = getUsuario();
+        const el = document.getElementById('sidebarAuth');
+        if (usuario) {
+            el.innerHTML = `<li class="sub"><button onclick="fazerLogout()">Sair</button></li>`;
+        }
+    }
+
+    // ── Widget usuário ───────────────────────────────
+    function initWidgetUser() {
+        const usuario = getUsuario();
+        const wb = document.getElementById('widgetUser');
+        if (!usuario) { wb.style.display = 'none'; return; }
+        wb.style.display = 'block';
+        const ini = (usuario.nome || 'U')[0].toUpperCase();
+        document.getElementById('widgetUserBody').innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div class="user-avatar" style="width:40px;height:40px;font-size:16px;border-radius:4px">${ini}</div>
+                <div>
+                    <div style="font-weight:600;font-size:14px;color:#232629">${usuario.nome}</div>
+                    <div style="font-size:12px;color:#6a737c">${usuario.email}</div>
+                </div>
+            </div>
+            <div style="font-size:12px;color:#6a737c">Tipo: <strong>${usuario.tipo || 'aluno'}</strong></div>`;
+    }
+
+    // ── Filtros e busca ──────────────────────────────
+    function buscarPerguntas() {
+        buscaAtual = document.getElementById('mainSearch').value.trim();
+        catAtual   = document.getElementById('mainCat').value;
+        paginaAtual = 1;
+        carregarPerguntas();
+    }
+
+    function filtrarCategoria(cat) {
+        catAtual = cat;
+        document.getElementById('mainCat').value = cat;
+        buscaAtual = '';
+        document.getElementById('mainSearch').value = '';
+        paginaAtual = 1;
+        carregarPerguntas();
+    }
+
+    function setOrdem(ordem, el) {
+        ordemAtual = ordem;
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        paginaAtual = 1;
+        carregarPerguntas();
+    }
+
+    // ── Carregar perguntas ───────────────────────────
+    async function carregarPerguntas(pagina = paginaAtual) {
+        paginaAtual = pagina;
+        renderSkeleton();
+
+        try {
+            let url = `${API_URL}/perguntas?pagina=${pagina}&limite=${LIMITE}`;
+            if (buscaAtual) url += `&busca=${encodeURIComponent(buscaAtual)}`;
+            if (catAtual)   url += `&categoria=${encodeURIComponent(catAtual)}`;
+
+            const res  = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+
+            let perguntas = data.dados || [];
+            if (ordemAtual === 'antigas') perguntas = [...perguntas].reverse();
+
+            totalPaginas = data.totalPaginas || 1;
+            paginaAtual  = data.paginaAtual  || pagina;
+
+            const total = totalPaginas * LIMITE;
+            document.getElementById('filterCount').textContent =
+                `${perguntas.length} pergunta${perguntas.length !== 1 ? 's' : ''} encontrada${perguntas.length !== 1 ? 's' : ''}`;
+
+            document.getElementById('statQ').textContent = total;
+
+            renderPerguntas(perguntas);
+            renderPaginacao(totalPaginas);
+
+        } catch (err) {
+            renderOffline();
+        }
+    }
+
+    // ── Render perguntas ─────────────────────────────
+    function renderPerguntas(perguntas) {
+        const lista = document.getElementById('questionList');
+
+        if (perguntas.length === 0) {
+            lista.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <p>Nenhuma pergunta encontrada${buscaAtual || catAtual ? ' para esse filtro' : ''}.</p>
+                    <small>Seja o primeiro a perguntar!</small>
+                </div>`;
+            return;
+        }
+
+        lista.innerHTML = perguntas.map(p => {
+            const tc  = tagClass(p.categoria);
+            const nRes = p.respostas_count || 0;
+            const statClass = nRes > 0 ? 'has-answers' : '';
+            return `
+            <div class="question-item" onclick="window.location.href='pergunta.html?id=${p.id}'">
+                <div class="q-stats">
+                    <div class="q-stat ${statClass}">
+                        <strong>${nRes}</strong>
+                        resposta${nRes !== 1 ? 's' : ''}
+                    </div>
+                    <div class="q-stat">
+                        <strong>${p.votos || 0}</strong>
+                        votos
+                    </div>
+                </div>
+                <div class="q-body">
+                    <h3 class="q-title">
+                        <a href="pergunta.html?id=${p.id}" onclick="event.stopPropagation()">${escHtml(p.titulo)}</a>
+                    </h3>
+                    <p class="q-excerpt">${escHtml(p.descricao || '')}</p>
+                    <div class="q-meta">
+                        <div class="q-tags">
+                            <span class="tag ${tc}">${escHtml(p.categoria || 'Geral')}</span>
+                        </div>
+                        <div class="q-userinfo">
+                            feita ${timeAgo(p.criado_em)} por
+                            <a href="#" onclick="event.stopPropagation()">${escHtml(p.autor || 'Anônimo')}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Paginação ────────────────────────────────────
+    function renderPaginacao(total) {
+        const p = document.getElementById('pagination');
+        if (total <= 1) { p.innerHTML = ''; return; }
+
+        let html = `<button class="page-btn" onclick="carregarPerguntas(${paginaAtual - 1})"
+                    ${paginaAtual <= 1 ? 'disabled' : ''}>← Anterior</button>`;
+
+        for (let i = 1; i <= total; i++) {
+            if (i === 1 || i === total || Math.abs(i - paginaAtual) <= 1) {
+                html += `<button class="page-btn ${i === paginaAtual ? 'active' : ''}"
+                          onclick="carregarPerguntas(${i})">${i}</button>`;
+            } else if (Math.abs(i - paginaAtual) === 2) {
+                html += `<span class="page-ellipsis">…</span>`;
+            }
+        }
+
+        html += `<button class="page-btn" onclick="carregarPerguntas(${paginaAtual + 1})"
+                 ${paginaAtual >= total ? 'disabled' : ''}>Próxima →</button>`;
+        p.innerHTML = html;
+    }
+
+    // ── Skeleton loading ─────────────────────────────
+    function renderSkeleton() {
+        const lista = document.getElementById('questionList');
+        lista.innerHTML = Array(5).fill(0).map(() => `
+            <div class="question-item" style="cursor:default">
+                <div class="q-stats">
+                    <div class="skeleton" style="width:60px;height:14px;margin-bottom:6px"></div>
+                    <div class="skeleton" style="width:50px;height:14px"></div>
+                </div>
+                <div class="q-body" style="flex:1">
+                    <div class="skeleton" style="height:18px;width:75%;margin-bottom:10px"></div>
+                    <div class="skeleton" style="height:12px;width:90%;margin-bottom:5px"></div>
+                    <div class="skeleton" style="height:12px;width:65%"></div>
+                </div>
+            </div>`).join('');
+        document.getElementById('filterCount').textContent = 'Carregando...';
+    }
+
+    // ── Offline ──────────────────────────────────────
+    function renderOffline() {
+        const lista = document.getElementById('questionList');
+        lista.innerHTML = `
+            <div class="offline-banner">
+                <strong>⚠️ Servidor offline ou inacessível.</strong>
+                Certifique-se de que o backend está rodando: <code>npm run dev</code>
+                na porta <code>3000</code>.
+            </div>
+            <div class="empty-state">
+                <div class="empty-icon">🔌</div>
+                <p>Não foi possível conectar ao servidor.</p>
+                <small>Verifique se o servidor Node.js está em execução.</small>
+            </div>`;
+        document.getElementById('filterCount').textContent = 'Servidor offline';
+        document.getElementById('pagination').innerHTML = '';
+    }
+
+    // ── Modal perguntar ──────────────────────────────
+    function abrirModalPergunta() {
+        if (!getUsuario()) {
+            showToast('Faça login para publicar uma pergunta.', 'error');
+            setTimeout(() => window.location.href = 'login.html', 1200);
+            return;
+        }
+        document.getElementById('askModal').classList.remove('hidden');
+        document.getElementById('askTitulo').focus();
+    }
+
+    function closeAskModal() {
+        document.getElementById('askModal').classList.add('hidden');
+        document.getElementById('askTitulo').value    = '';
+        document.getElementById('askDescricao').value = '';
+    }
+
+    async function publicarPergunta() {
+        const titulo    = document.getElementById('askTitulo').value.trim();
+        const descricao = document.getElementById('askDescricao').value.trim();
+        const categoria = document.getElementById('askCategoria').value;
+        const token     = getToken();
+
+        if (!titulo)    { showToast('Preencha o título da pergunta.', 'error'); return; }
+        if (!descricao) { showToast('Preencha a descrição da pergunta.', 'error'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/perguntas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ titulo, descricao, categoria })
+            });
+            const data = await res.json();
+            if (!res.ok) { showToast(data.erro || 'Erro ao publicar.', 'error'); return; }
+            closeAskModal();
+            showToast('Pergunta publicada com sucesso!', 'success');
+            paginaAtual = 1;
+            carregarPerguntas();
+        } catch (e) {
+            showToast('Servidor offline. Tente novamente.', 'error');
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
 </body>
-
 </html>

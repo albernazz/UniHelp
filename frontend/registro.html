@@ -1,69 +1,178 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniHelp - Registro</title>
-
+    <title>UniHelp — Criar conta</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-<div class="container">
+    <div class="toast" id="uh-toast"></div>
 
-    <h1>Criar Conta</h1>
+    <header class="so-header" id="soHeader"></header>
 
-    <form id="registroForm">
+    <div class="so-body" style="justify-content:center;padding-top:40px">
+        <div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%">
 
-        <input
-                type="text"
-                id="nome"
-                placeholder="Nome"
-                required
-        >
+            <!-- SIDEBAR INFO -->
+            <div style="max-width:220px;padding-top:8px">
+                <h2 style="font-size:27px;font-weight:400;line-height:1.3;color:#232629;margin-bottom:20px">
+                    Uni<span style="color:#f48024">Help</span>
+                </h2>
+                <p style="font-size:15px;color:#525960;margin-bottom:14px;line-height:1.5">
+                    Junte-se à comunidade de estudantes da UCB.
+                </p>
+                <ul style="list-style:none;font-size:15px;color:#525960;display:flex;flex-direction:column;gap:12px">
+                    <li>📝 Faça perguntas sem julgamentos</li>
+                    <li>💬 Compartilhe seu conhecimento</li>
+                    <li>👍 Construa sua reputação</li>
+                    <li>🏷️ Explore por categorias</li>
+                </ul>
+            </div>
 
-        <input
-                type="email"
-                id="email"
-                placeholder="E-mail"
-                required
-        >
+            <!-- CARD DE REGISTRO -->
+            <div style="width:100%;max-width:360px">
+                <div class="auth-card">
+                    <h2>Criar conta</h2>
 
-        <input
-                type="password"
-                id="senha"
-                placeholder="Senha"
-                required
-        >
+                    <div class="form-group">
+                        <label class="form-label" for="regNome">Nome completo</label>
+                        <input type="text" id="regNome" class="form-input" placeholder="Seu nome" autocomplete="name">
+                    </div>
 
-        <select id="tipo">
+                    <div class="form-group">
+                        <label class="form-label" for="regEmail">E-mail</label>
+                        <input type="email" id="regEmail" class="form-input" placeholder="seu@email.com"
+                            autocomplete="email">
+                    </div>
 
-            <option value="calouro">
-                Calouro
-            </option>
+                    <div class="form-group">
+                        <label class="form-label" for="regSenha">Senha</label>
+                        <p class="form-label-desc">Mínimo de 6 caracteres.</p>
+                        <input type="password" id="regSenha" class="form-input" placeholder="••••••••"
+                            autocomplete="new-password">
+                    </div>
 
-            <option value="veterano">
-                Veterano
-            </option>
+                    <div class="form-group">
+                        <label class="form-label" for="regTipo">Tipo de usuário</label>
+                        <select id="regTipo" class="form-select">
+                            <option value="aluno">Aluno</option>
+                            <option value="professor">Professor</option>
+                        </select>
+                    </div>
 
-        </select>
+                    <!-- Barra de força da senha -->
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;gap:4px;margin-bottom:4px">
+                            <div class="senha-barra" id="b1"
+                                style="height:4px;flex:1;background:#e3e6e8;border-radius:2px;transition:background .2s">
+                            </div>
+                            <div class="senha-barra" id="b2"
+                                style="height:4px;flex:1;background:#e3e6e8;border-radius:2px;transition:background .2s">
+                            </div>
+                            <div class="senha-barra" id="b3"
+                                style="height:4px;flex:1;background:#e3e6e8;border-radius:2px;transition:background .2s">
+                            </div>
+                            <div class="senha-barra" id="b4"
+                                style="height:4px;flex:1;background:#e3e6e8;border-radius:2px;transition:background .2s">
+                            </div>
+                        </div>
+                        <div id="senhaLabel" style="font-size:11px;color:#6a737c"></div>
+                    </div>
 
-        <button type="submit">
-            Criar Conta
-        </button>
+                    <button class="btn-primary" style="width:100%" onclick="fazerRegistro()" id="btnReg">
+                        Criar conta
+                    </button>
 
-    </form>
+                    <div class="auth-link-row">
+                        Já tem conta?
+                        <a href="login.html">Entrar</a>
+                    </div>
+                </div>
 
-    <p>
-        Já possui conta?
-        <a href="login.html">
-            Entrar
-        </a>
-    </p>
+                <div style="text-align:center;margin-top:16px;font-size:12px;color:#6a737c">
+                    Ao se registrar, você concorda com os
+                    <a href="#" style="color:#0074cc">Termos de Uso</a>.
+                </div>
+            </div>
 
-</div>
+        </div>
+    </div>
 
-<script src="js/registro.js"></script>
-<script src="js/api.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHeader();
+            if (getUsuario()) window.location.href = 'feed.html';
+
+            // medidor de força da senha
+            document.getElementById('regSenha').addEventListener('input', atualizarForca);
+        });
+
+        function atualizarForca() {
+            const senha = document.getElementById('regSenha').value;
+            const barras = ['b1', 'b2', 'b3', 'b4'];
+            const label = document.getElementById('senhaLabel');
+
+            let forca = 0;
+            if (senha.length >= 6) forca++;
+            if (senha.length >= 10) forca++;
+            if (/[A-Z]/.test(senha)) forca++;
+            if (/[0-9!@#$%^&*]/.test(senha)) forca++;
+
+            const cores = ['', '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71'];
+            const textos = ['', 'Muito fraca', 'Fraca', 'Média', 'Forte'];
+
+            barras.forEach((id, i) => {
+                document.getElementById(id).style.background = i < forca ? cores[forca] : '#e3e6e8';
+            });
+            label.textContent = senha ? textos[forca] : '';
+            label.style.color = cores[forca];
+        }
+
+        async function fazerRegistro() {
+            const nome = document.getElementById('regNome').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const senha = document.getElementById('regSenha').value;
+            const tipo = document.getElementById('regTipo').value;
+
+            if (!nome) { showToast('Preencha seu nome.', 'error'); return; }
+            if (!email) { showToast('Preencha o e-mail.', 'error'); return; }
+            if (!senha || senha.length < 6) { showToast('A senha deve ter pelo menos 6 caracteres.', 'error'); return; }
+
+            const btn = document.getElementById('btnReg');
+            btn.textContent = 'Criando conta...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/usuarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha, tipo })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showToast(data.erro || 'Erro ao criar conta.', 'error');
+                    btn.textContent = 'Criar conta';
+                    btn.disabled = false;
+                    return;
+                }
+
+                showToast('Conta criada com sucesso!', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1200);
+
+            } catch (e) {
+                showToast('Servidor offline. Tente novamente.', 'error');
+                btn.textContent = 'Criar conta';
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
+
 </html>

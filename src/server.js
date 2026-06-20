@@ -27,7 +27,7 @@ app.use(express.json());
 // --- Rate Limiting (Segurança) ---
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 3, // Limita a 3 requisições
+    max: 100, // Limita a 3 requisições
     message: { erro: 'Muitas requisições deste IP, por favor, tente novamente mais tarde.' }
 });
 
