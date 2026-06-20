@@ -1,148 +1,150 @@
-# UniHelp 🎓 - Guia de Inicialização e Configuração
+# UniHelp 🎓: Plataforma de Apoio Acadêmico
 
-Este guia contém o passo a passo detalhado para configurar, inicializar e testar o **UniHelp** (um "StackOverflow" universitário) em uma nova máquina. O projeto é composto por uma API desenvolvida em Node.js (Express), banco de dados PostgreSQL e uma interface web (Frontend) nativa.
+## Descrição do Projeto
 
----
+O UniHelp é uma plataforma inovadora projetada para funcionar como um "StackOverflow" universitário, facilitando a troca de conhecimento e a colaboração entre estudantes. Ele oferece um ambiente onde os usuários podem fazer perguntas, fornecer respostas, votar em conteúdos úteis e categorizar discussões, promovendo uma comunidade acadêmica engajada e interativa.
 
-## 📌 Pré-requisitos
+## Funcionalidades Principais
 
-Antes de iniciar, certifique-se de ter instalado em sua máquina:
-1. **Node.js** (versão 16 ou superior)
-2. **npm** (gerenciador de pacotes do Node, instalado junto com o Node.js)
-3. **PostgreSQL** (SGBD para gerenciamento do banco de dados)
+- **Sistema de Perguntas e Respostas:** Os usuários podem postar dúvidas e receber soluções da comunidade.
+- **Votação e Reputação:** Mecanismo de votos para classificar a utilidade das perguntas e respostas, construindo a reputação dos usuários.
+- **Categorização de Conteúdo:** Organização de discussões por categorias para facilitar a busca e a navegação.
+- **Busca Avançada:** Funcionalidade de busca para encontrar rapidamente informações relevantes.
+- **Autenticação Segura:** Sistema de login e registro com autenticação baseada em JWT e criptografia de senhas (bcrypt).
+- **Controle de Taxa (Rate Limiting):** Proteção contra abusos e garantia de estabilidade da plataforma.
 
----
+## Tecnologias Utilizadas
 
-## 🛠️ Passo 1: Instalação das Dependências
+### Backend (API)
 
-1. Abra o terminal na pasta raiz do projeto (onde está localizado o arquivo `package.json`).
-2. Execute o comando abaixo para instalar todas as bibliotecas necessárias (incluindo Express, Driver do PostgreSQL, Bcrypt para criptografia, JWT para autenticação, CORS e as regras de segurança do Rate Limiting):
+O backend do UniHelp é construído com uma API robusta e escalável, utilizando as seguintes tecnologias:
+
+- **Node.js:** Ambiente de execução JavaScript assíncrono e orientado a eventos.
+- **Express.js:** Framework web para Node.js, utilizado para construir a API RESTful.
+- **PostgreSQL:** Sistema de Gerenciamento de Banco de Dados Relacional (SGBDR) para persistência de dados.
+- **Bcrypt:** Biblioteca para hash de senhas, garantindo a segurança das credenciais dos usuários.
+- **JSON Web Tokens (JWT):** Padrão para criação de tokens de acesso seguros, utilizados na autenticação.
+- **CORS:** Middleware para habilitar o Cross-Origin Resource Sharing, permitindo requisições de diferentes origens.
+- **Express Rate Limit:** Middleware para limitar o número de requisições repetidas a endpoints públicos, prevenindo ataques de força bruta e DoS.
+- **Dotenv:** Módulo para carregar variáveis de ambiente de um arquivo `.env`.
+- **Nodemon:** Ferramenta que ajuda no desenvolvimento de aplicações baseadas em Node.js reiniciando automaticamente o servidor quando detecta alterações nos arquivos.
+
+### Frontend (Interface Web)
+
+A interface do usuário é uma aplicação web nativa, desenvolvida com:
+
+- **HTML5:** Estrutura semântica e acessível para o conteúdo da web.
+- **CSS3:** Estilização moderna e responsiva para uma experiência de usuário agradável.
+- **JavaScript:** Lógica interativa e dinâmica para o comportamento da aplicação.
+
+## Pré-requisitos
+
+Para configurar e executar o UniHelp em sua máquina local, você precisará ter instalado:
+
+- **Node.js** (versão 16 ou superior)
+- **npm** (gerenciador de pacotes do Node.js, geralmente instalado junto com o Node.js)
+- **PostgreSQL** (servidor de banco de dados)
+
+## Instalação e Configuração
+
+Siga os passos abaixo para colocar o UniHelp em funcionamento:
+
+1.  **Clone o repositório:**
+
+    ```bash
+    git clone https://github.com/albernazz/UniHelp.git
+    cd UniHelp
+    ```
+
+2.  **Instale as dependências do backend:**
+
+    Navegue até a pasta raiz do projeto (onde se encontra o `package.json`) e execute:
+
+    ```bash
+    npm install
+    ```
+
+3.  **Configuração do Banco de Dados:**
+
+    - Certifique-se de que o PostgreSQL esteja em execução.
+    - Crie um banco de dados para o projeto (ex: `unihelp_db`).
+    - Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis de ambiente:
+
+    ```
+    DB_USER=seu_usuario_postgres
+    DB_HOST=localhost
+    DB_DATABASE=unihelp_db
+    DB_PASSWORD=sua_senha_postgres
+    DB_PORT=5432
+    JWT_SECRET=sua_chave_secreta_jwt
+    ```
+
+    *Substitua `seu_usuario_postgres`, `sua_senha_postgres` e `sua_chave_secreta_jwt` pelos seus dados.* 
+
+4.  **Execute as migrações (se houver) e seeds (se houver):**
+
+    *(Assumindo que existam scripts para isso, caso contrário, este passo pode ser adaptado ou removido.)*
+
+    ```bash
+    # Exemplo: npm run migrate
+    # Exemplo: npm run seed
+    ```
+
+## Como Executar
+
+Para iniciar a aplicação, execute o seguinte comando na raiz do projeto:
 
 ```bash
-npm install
-Nota: Se o pacote express-rate-limit não estiver listado no seu package.json, garanta sua instalação executando:
+npm start
+# Ou para desenvolvimento com recarregamento automático:
+npm run dev
+```
 
-Bash
-npm install express-rate-limit
-🗄️ Passo 2: Configuração do Banco de Dados (PostgreSQL)
-O UniHelp utiliza quatro tabelas principais interconectadas por chaves estrangeiras com exclusão em cascata (ON DELETE CASCADE).
+O servidor da API estará disponível em `http://localhost:3000` (ou a porta configurada).
 
-Abra o utilitário de linha de comando do PostgreSQL (psql) ou utilize uma ferramenta gráfica como o pgAdmin.
+Para acessar a interface web, abra o arquivo `frontend/login.html` (ou `frontend/feed.html` após o login) em seu navegador.
 
-No seu terminal do PostgreSQL, crie o banco de dados e conecte-se a ele:
+## Estrutura do Projeto
 
-SQL
-CREATE DATABASE unihelp;
-\c unihelp;
-Copie, cole e execute o script DDL completo abaixo para estruturar o banco de dados com as novas funcionalidades de busca, categorias e sistema de votos:
+```
+UniHelp/
+├── frontend/             # Contém os arquivos da interface web (HTML, CSS, JavaScript)
+│   ├── css/
+│   ├── js/
+│   ├── feed.html
+│   ├── login.html
+│   ├── pergunta.html
+│   └── registro.html
+├── src/                  # Contém o código-fonte do backend (API Node.js)
+│   ├── config/           # Configurações gerais
+│   ├── controllers/      # Lógica de negócio para cada rota
+│   ├── middlewares/      # Middlewares para tratamento de erros, autenticação, etc.
+│   ├── routes/           # Definição das rotas da API
+│   └── server.js         # Ponto de entrada da aplicação backend
+├── .gitignore            # Arquivos e diretórios a serem ignorados pelo Git
+├── .http                 # Arquivos de requisição HTTP (ex: para testes com REST Client)
+├── package.json          # Metadados do projeto e lista de dependências
+├── package-lock.json     # Registro exato das versões das dependências
+└── README.md             # Este arquivo
+```
 
-SQL
--- 1. Tabela de Usuários
-CREATE TABLE usuarios (
-    id SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    tipo VARCHAR(50) NOT NULL, -- Ex: 'aluno', 'professor', 'admin'
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+## Contribuição
 
--- 2. Tabela de Perguntas
-CREATE TABLE perguntas (
-    id SERIAL PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descricao TEXT NOT NULL,
-    categoria VARCHAR(100) DEFAULT 'Geral', -- Sistema de categorias/tags
-    usuario_id INT NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_usuario
-        FOREIGN KEY (usuario_id) 
-        REFERENCES usuarios(id) 
-        ON DELETE CASCADE
-);
+Contribuições são bem-vindas! Se você deseja contribuir para o UniHelp, siga estas diretrizes:
 
--- 3. Tabela de Respostas
-CREATE TABLE respostas (
-    id SERIAL PRIMARY KEY,
-    conteudo TEXT NOT NULL,
-    votos_uteis INT DEFAULT 0,     -- Contador de votos positivos
-    votos_nao_uteis INT DEFAULT 0, -- Contador de votos negativos
-    pergunta_id INT NOT NULL,
-    usuario_id INT NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_pergunta
-        FOREIGN KEY (pergunta_id) 
-        REFERENCES perguntas(id) 
-        ON DELETE CASCADE,
-    CONSTRAINT fk_usuario_resposta
-        FOREIGN KEY (usuario_id) 
-        REFERENCES usuarios(id) 
-        ON DELETE CASCADE
-);
+1.  Faça um fork do repositório.
+2.  Crie uma nova branch (`git checkout -b feature/sua-feature`).
+3.  Faça suas alterações e commit (`git commit -m 'feat: adiciona nova funcionalidade'`).
+4.  Envie para a branch (`git push origin feature/sua-feature`).
+5.  Abra um Pull Request detalhando suas alterações.
 
--- 4. Tabela de Controle de Votos (Impede duplicidade e gerencia remoção/alteração)
-CREATE TABLE votos_respostas (
-    id SERIAL PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    resposta_id INT NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('util', 'nao_util')),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_voto_usuario 
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    CONSTRAINT fk_voto_resposta 
-        FOREIGN KEY (resposta_id) REFERENCES respostas(id) ON DELETE CASCADE,
-    CONSTRAINT uk_usuario_resposta 
-        UNIQUE (usuario_id, resposta_id)
-);
-🔑 Passo 3: Configuração das Variáveis de Ambiente (.env)
-A aplicação busca as credenciais confidenciais a partir de um arquivo de ambiente localizado na raiz do projeto.
+## Licença
 
-Na pasta raiz do projeto (mesmo nível das pastas src e frontend), crie um arquivo chamado exatamente .env.
+Este projeto está licenciado sob a licença ISC. Veja o arquivo `LICENSE` para mais detalhes.
 
-Adicione o seguinte conteúdo ao arquivo, adaptando os valores conforme as configurações da sua máquina:
+## Autores
 
-Snippet de código
-DB_USER=postgres
-DB_HOST=localhost
-DB_DATABASE=unihelp
-DB_PASSWORD=SUA_SENHA_DO_POSTGRES_AQUI
-DB_PORT=5432
-
-JWT_SECRET=UMA_CHAVE_SECRETA_E_SEGURA_PARA_O_JWT
-⚠️ Atenção: Substitua SUA_SENHA_DO_POSTGRES_AQUI pela senha real definida na instalação do seu PostgreSQL.
-
-🚀 Passo 4: Inicialização do Projeto
-Com o banco configurado, dependências instaladas e o arquivo .env preenchido, você já pode colocar o servidor de pé.
-
-No seu terminal, execute o comando de inicialização a partir do diretório raiz:
-
-Bash
-node src/server.js
-Se tudo estiver correto, você verá no terminal a seguinte mensagem de sucesso:
-
-Plaintext
-Servidor rodando na porta 3000
-🌐 Passo 5: Acessando a Aplicação
-A API do backend foi desenhada para servir automaticamente a interface web estática.
-
-Abra qualquer navegador web de sua preferência.
-
-Acesse o endereço local do projeto:
-
-Plaintext
-http://localhost:3000
-O sistema redirecionará você de forma automática para a tela do feed principal (/feed.html), onde você poderá se cadastrar, fazer login, realizar buscas por perguntas, filtrar por categorias e interagir votando em respostas úteis ou não úteis.
-
-🔒 Segurança: Como testar a proteção de Rate Limiting
-Para garantir que a proteção de força bruta e spam está operando nas rotas da API (/usuarios, /perguntas, /respostas), você pode simular múltiplos acessos rápidos.
-
-Teste Rápido (Alterando o limite)
-No arquivo src/server.js, altere temporariamente o parâmetro max: 100 para max: 3.
-
-Reinicie o servidor (node src/server.js).
-
-Atualize a página do navegador (F5) 4 vezes seguidas na rota http://localhost:3000/perguntas.
-
-Na 4ª tentativa, você receberá um status de erro HTTP 429 (Too Many Requests) com a mensagem de bloqueio.
-
-Lembre-se de retornar o valor original para max: 100 após o teste.
+- **Davi Albernaz**
+- **Davi Castro**
+- **Eduardo Gonçalves**
+- **André Morais**
